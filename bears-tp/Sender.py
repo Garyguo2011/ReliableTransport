@@ -4,6 +4,12 @@ import getopt
 import Checksum
 import BasicSender
 
+
+# Global Constant
+CUMACK = 0
+SACK = 1
+TIMEOUT_CONSTANT = 0.5
+
 '''
 This is a skeleton sender class. Create a fantastic transport protocol here.
 '''
@@ -19,13 +25,19 @@ class Sender(BasicSender.BasicSender):
         self.ackPool = AckPool()
         if sackMode:
             raise NotImplementedError #remove this line when you implement SACK
+            self.mode = SACK
+            # only affect two function:
+            #   handle_timeout()
+            #   Faster_Retransmit
+        else:
+            self.mode = CUMACK
 
     # Main sending loop.
     def start(self):
-        while not packetPool.isEmpty():
-            while not sendingQueue.isEmpty():
+        while not self.packetPool.isEmpty():
+            while not self.sendingQueue.isEmpty():
                 self.send(self.sendingQueue.deQueue())
-            response = self.receive()
+            response = self.receive(TIMEOUT_CONSTANT)
             if response == None:
                 self.handle_timeout()
             else:
@@ -65,7 +77,7 @@ class Sender(BasicSender.BasicSender):
 class InternalACKPacket(object):
     def __init__(self, msg_type, seqnoStr):
         self.msg_type = msg_type
-        if msg_type = 'sack':
+        if msg_type == 'sack':
             tmp = seqnoStr.split(';')
             self.cum_ack = tmp[0]
             self.sack = tmp[1].split(',')
@@ -91,6 +103,25 @@ class WindowElement(object):
 #####################################################
 
 ################## Data Structure and Interface ####################
+class Queue(object):
+    def __init__(self):
+        self._que = []
+
+    def deQueue(self):
+        if not self.isEmpty():
+            self._que.pop(0)
+        else:
+            print("que is isEmpty")
+
+    def enQueue(self, element):
+        self._que.append(element)
+
+    def isEmpty(self):
+        return len(self._que) == 0
+
+    def size(self):
+        return len(self._que)
+
 class Window(Queue):
     def enQueue(self, element):
         if type(element) == WindowElement and self.size() < 5:
@@ -121,25 +152,6 @@ class AckPool(Queue):
 
     def cleanQueue(self, element):
         del self._que[:]
-
-class Queue(object):
-    def __init__(self):
-        self._que = []
-
-    def deQueue(self):
-        if not self.isEmpty():
-            self._que.pop(0)
-        else:
-            print("que is isEmpty")
-
-    def enQueue(self, element):
-        self._que.append(element)
-
-    def isEmpty(self):
-        return len(self._que) == 0
-
-    def size(self):
-        return len(self._que)
 
 ####################################################################
 
