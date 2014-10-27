@@ -136,6 +136,14 @@ class Window(Queue):
             if not winElt.isAcked():
                 unAckLst.append(winElt)
         return unAckLst
+    
+    def processAck(self, cumAckNo):
+        space = 0
+        for winElt in self.que:
+            if winElt.seqno() < cumAckNo:
+                self.que.remove(winElt)
+                space += 1;
+        return space
 
 class SendQueue(Queue):
     def extendQueue(self, lst):
