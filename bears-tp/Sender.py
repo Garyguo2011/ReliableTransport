@@ -79,11 +79,11 @@ class InternalACKPacket(object):
         self.msg_type = msg_type
         if msg_type == 'sack':
             tmp = seqnoStr.split(';')
-            self.cum_ack = tmp[0]
-            self.sack = tmp[1].split(',')
+            self.cumAckNo = tmp[0]
+            self.sAcks = tmp[1].split(',')
         else:
-            self.cum_ack = seqnoStr
-            self.sack = ()
+            self.cumAckNo = seqnoStr
+            self.sAcks = ()
 
 class WindowElement(object):
     def __init__(self, packet, seqno):
@@ -103,6 +103,7 @@ class WindowElement(object):
 #####################################################
 
 ################## Data Structure and Interface ####################
+
 class Queue(object):
     def __init__(self):
         self._que = []
@@ -146,11 +147,13 @@ class SendQueue(Queue):
 class AckPool(Queue):
     def enQueue(self, element):
         if type(element) == InternalACKPacket and self.size() < 4:
+            if not self.isEmpty():
+                assert element.cumAckNo == self.que[0].cumAckNo, "ERROR: In ACK pool, element ACKNO != que[0] ACKNO"
             Queue.enQueue(self, element)
         else:
             print("Fast Retransmission didn't happen")
 
-    def cleanQueue(self, element):
+    def cleanQueue(self):
         del self._que[:]
 
 ####################################################################
