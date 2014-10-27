@@ -1,0 +1,10 @@
+algorithm
+sendingQueue - store packet that wait to be send
+
+sendPacketBuffer 
+receivePacketBufer
+
+def start():
+	while not_send_all_packet:
+		while not sendingQueue.isEmpty:
+			self.send( send )
