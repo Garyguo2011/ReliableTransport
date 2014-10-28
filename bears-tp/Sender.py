@@ -56,7 +56,7 @@ class Sender(BasicSender.BasicSender):
     def handle_response(self, response_packet):
         if Checksum.validate_checksum(response_packet):
             internalACKPacket = internalACKPacketGenerator(response_packet)
-            if self.mode = CUMACK:
+            if self.mode == CUMACK:
                 self.handle_cum_ack(internalACKPacket)
             else:
                 self.handle_sack_ack(internalACKPacket)
@@ -66,7 +66,8 @@ class Sender(BasicSender.BasicSender):
     def handle_sack_ack(self, internalACKPacket):
         sAcks = internalACKPacket.sAck()
         for sAck in sAcks:
-            
+            self.window.setIsAcked(sAck)
+        self.handle_cum_ack(internalACKPacket)
 
 
 
@@ -79,7 +80,7 @@ class Sender(BasicSender.BasicSender):
             elif self.ackpool.largestAckSoFar() < ack:
                 self.handle_new_ack(ack)
             else:
-                break
+                return
         elif ack in self.ackPool:
             self.handle_dup_ack(ack)
         else:
@@ -106,7 +107,7 @@ class Sender(BasicSender.BasicSender):
         # implement fast retransmit
             while self.ackPool.isEmpty() == False:
                 self.ackPool.deQueue()
-            if self.mode = CUMACK:
+            if self.mode == CUMACK:
                 packet = self.window.locatePacket(ack)
                 self.sendingQueue.enQueue(packet)
             else:
@@ -230,6 +231,11 @@ class Window(Queue):
         for elem in self._que:
             if elem.seqno == ack:
                 return elem.packet
+
+    def setIsAcked(self, ack):
+        for elem in self._que:
+            if elem.seqno == ack:
+                elem.setAcked()
 
 
 # sending queue class
