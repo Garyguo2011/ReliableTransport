@@ -68,18 +68,20 @@ class Receiver():
             'end' : self._handle_end,
             'ack' : self._handle_ack
         }
+        self.droplist = [5]
 
     def start(self):
         while True:
             try:
                 message, address = self.receive()
                 msg_type, seqno, data, checksum = self._split_message(message)
-                droplist = [5]
+                
                 try:
                     seqno = int(seqno)
                 except:
                     raise ValueError
-                if not seqno in droplist:
+
+                if not seqno in self.droplist:
                     if debug:
                         print "Receiver.py: received %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
                     if Checksum.validate_checksum(message):
@@ -88,8 +90,7 @@ class Receiver():
                         print "Receiver.py: checksum failed: %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
                 else:
                     print "Receiver.py: drop %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
-                    droplist.remove(seqno)
-                    print(droplist)
+                    self.droplist.remove(seqno)
 
                 if time.time() - self.last_cleanup > self.timeout:
                     self._cleanup()

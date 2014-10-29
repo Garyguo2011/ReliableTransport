@@ -44,10 +44,11 @@ class Sender(BasicSender.BasicSender):
     # Main sending loop.
     def start(self):
         while not self.window.isEmpty():
+            # print(self.window)
             while not self.sendingQueue.isEmpty():
                 sendingPacket = self.sendingQueue.deQueue()
                 self.send(sendingPacket)
-                # print(sendingPacket)
+                print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)
             print(response)
             if response == None:
@@ -284,12 +285,16 @@ class Window(Queue):
         return allPacket
     
     def processAck(self, cumAckNo):
-        space = 0
+        removeList = []
         for winElt in self._que:
             if winElt.seqno() < cumAckNo:
-                # print("Queue Rmove" + str(winElt.seqno()))
-                self._que.remove(winElt)
-                space += 1;
+                removeList.append(winElt)
+
+        space = 0
+        for winElt in removeList:
+            # print("Queue Rmove" + str(winElt.seqno()))
+            self._que.remove(winElt)
+            space += 1;
         return space
 
     def locatePacket(self, ack_seqno):
@@ -301,6 +306,12 @@ class Window(Queue):
         for elem in self._que:
             if elem.seqno() == ack_seqno:
                 elem.setAcked()
+
+    def __str__(self):
+        inWindow = []
+        for elem in self._que:
+            inWindow.append(elem.seqno())
+        return str(inWindow)
 
 # sending queue class
 class SendQueue(Queue):
