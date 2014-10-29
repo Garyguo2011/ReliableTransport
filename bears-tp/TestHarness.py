@@ -15,10 +15,12 @@ you want to run. The tests automatically register themselves with the
 forwarder, so they will magically be run.
 """
 def tests_to_run(forwarder):
-    from tests import BasicTest, RandomDropTest, SackRandomDropTest
+    from tests import BasicTest, RandomDropTest, SackRandomDropTest, SingleDropTest
     # BasicTest.BasicTest(forwarder, "README")
     RandomDropTest.RandomDropTest(forwarder, "README")
-    #SackRandomDropTest.SackRandomDropTest(forwarder, "README")
+    # SackRandomDropTest.SackRandomDropTest(forwarder, "README")
+    # SingleDropTest.SingleDropTest(forwarder, "README")
+
 """
 Testing is divided into two pieces: this forwarder and a set of test cases in
 the tests directory.
@@ -109,7 +111,7 @@ class Forwarder(object):
     def execute_tests(self):
         for (t, input_file) in self.tests:
             self.current_test = t
-            print "Now running '%s'..." % self.current_test.__class__.__name__
+            # print "Now running '%s'..." % self.current_test.__class__.__name__
             try:
                 self.start(input_file)
             except (KeyboardInterrupt, SystemExit):
