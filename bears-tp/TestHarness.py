@@ -17,7 +17,7 @@ forwarder, so they will magically be run.
 def tests_to_run(forwarder):
     from tests import BasicTest, RandomDropTest, SackRandomDropTest
     BasicTest.BasicTest(forwarder, "README")
-    # RandomDropTest.RandomDropTest(forwarder, "README")
+    RandomDropTest.RandomDropTest(forwarder, "README")
     #SackRandomDropTest.SackRandomDropTest(forwarder, "README")
 """
 Testing is divided into two pieces: this forwarder and a set of test cases in
@@ -157,6 +157,10 @@ class Forwarder(object):
         self.recv_outfile = "127.0.0.1.%d" % self.port
         self.in_queue = []
         self.out_queue = []
+
+        if os.path.exists(self.recv_outfile):
+            os.remove(self.recv_outfile)
+
         receiverCmd = ["python", self.receiver_path,
                                      "-p", str(self.receiver_port)
                                     ]
