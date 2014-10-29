@@ -10,7 +10,7 @@ CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
 MAX_BUFFER_PACKETS = 10
-MAX_PACKET_SIZE = 32    # 1472 - 32
+MAX_PACKET_SIZE = 1440    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -29,7 +29,6 @@ class Sender(BasicSender.BasicSender):
         self.initialComponentLoad()
 
         if sackMode:
-            raise NotImplementedError #remove this line when you implement SACK
             self.mode = SACK
         else:
             self.mode = CUMACK
