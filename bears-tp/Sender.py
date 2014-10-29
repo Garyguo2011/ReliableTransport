@@ -9,6 +9,9 @@ import BasicSender
 CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
+MAX_BUFFER_PACKETS = 30
+MAX_PACKET_SIZE = 32    # 1472 - 32
+MAX_WINDOW_SIZE = 5
 
 '''
 This is a skeleton sender class. Create a fantastic transport protocol here.
@@ -19,25 +22,35 @@ class Sender(BasicSender.BasicSender):
         # File Spliter and put all packet into packetPool
         # initial first 5 packet to window
         # put first 5 packets to sendingQueue
-        self.packetPool = Queue()
+        self.packetPool = PacketPool(filename, self)
+        print(self.packetPool.size())
         self.window = Window()
         self.sendingQueue = SendQueue()
         self.ackPool = AckPool()
+        self.initialComponentLoad()
+
         if sackMode:
             raise NotImplementedError #remove this line when you implement SACK
             self.mode = SACK
-            # only affect two function:
-            #   handle_timeout()
-            #   Faster_Retransmit
         else:
             self.mode = CUMACK
 
+    def initialComponentLoad(self):
+        count = 0
+        while self.window.size() < MAX_WINDOW_SIZE and not self.packetPool.isEmpty():
+            packet = self.packetPool.deQueue()
+            self.sendingQueue.enQueue(packet)
+            self.window.enQueue(self.windowElementGenerator(packet))
+
     # Main sending loop.
     def start(self):
-        while not self.packetPool.isEmpty():
+        while not self.window.isEmpty():
             while not self.sendingQueue.isEmpty():
-                self.send(self.sendingQueue.deQueue())
+                sendingPacket = self.sendingQueue.deQueue()
+                self.send(sendingPacket)
+                print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)
+            print(response)
             if response == None:
                 self.handle_timeout()
             else:
@@ -45,79 +58,57 @@ class Sender(BasicSender.BasicSender):
 
     def handle_timeout(self):
         if self.mode == CUMACK:
-            for elem in self.window:
-                self.sendingQueue.enQueue(elem.packet)
+            self.sendingQueue.extendQueue(self.window.getAllPackets())
         else:
-            for elem in self.window:
-                if elem.isAcked() == False:
-                    self.sendingQueue.enQueue(elem.packet)
+            self.sendingQueue.extendQueue(self.window.getUnACKPackets())
 
     # [Add]: Handles a response from the receiver.
     def handle_response(self, response_packet):
         if Checksum.validate_checksum(response_packet):
-            internalACKPacket = internalACKPacketGenerator(response_packet)
-            if self.mode == CUMACK:
+            internalACKPacket = self.internalACKPacketGenerator(response_packet)
+            if internalACKPacket.getMsgtype() == 'ack':
                 self.handle_cum_ack(internalACKPacket)
-            else:
+            elif internalACKPacket.getMsgtype() == 'sack':
                 self.handle_sack_ack(internalACKPacket)
-
 
     # [add]: Handle selective ACKs.
     def handle_sack_ack(self, internalACKPacket):
-        sAcks = internalACKPacket.sAck()
-        for sAck in sAcks:
-            self.window.setIsAcked(sAck)
+        for each_sAck in internalACKPacket.getSack():
+            self.window.setIsAcked(each_sAck)
         self.handle_cum_ack(internalACKPacket)
 
-
-
     # [add]: Handle general incoming cumulative ACKs.
-    def handle_cum_ack(self, interalACKPacket):
-        ack = interalACKPacket.cumAckNo()
-        if self.ackPool.isEmpty() == True:
-            if self.ackpool.largestAckSoFar() == ack:
-                self.handle_dup_ack(ack)
-            elif self.ackpool.largestAckSoFar() < ack:
-                self.handle_new_ack(ack)
-            else:
-                return
-        elif ack in self.ackPool:
-            self.handle_dup_ack(ack)
-        else:
-            if ack > self.ackPool.peek():
-                self.handle_new_ack(ack)
+    # Start from here ..........................................
+    def handle_cum_ack(self, internalACKPacket):
+        ack_seqno = internalACKPacket.getCumAckNo()
+        if self.ackPool.largestAckSoFar() == ack_seqno:
+            self.handle_dup_ack(ack_seqno)
+        elif self.ackPool.largestAckSoFar() < ack_seqno:
+            self.handle_new_ack(ack_seqno)
 
-
-
-    def handle_new_ack(self, ack):
-        while self.ackpool.isEmpty() == False:
-            self.ackPool.deQueue()
-        self.ackPool.enQueue(ack)
-        space = self.window.processAck()
-        while space > 0:
+    # ack_seqno - a integer that represent a ack sequence number
+    def handle_new_ack(self, ack_seqno):
+        self.ackPool.cleanQueue()
+        self.ackPool.enQueue(ack_seqno)
+        space = self.window.processAck(ack_seqno)
+        while space > 0 and not self.packetPool.isEmpty():
             tmp_packet = self.packetPool.deQueue()
             self.sendingQueue.enQueue(tmp_packet)
             self.window.enQueue(self.windowElementGenerator(tmp_packet))
 
-
-
-
-    def handle_dup_ack(self, ack):
-        if ackPool.length == 3:
+    def handle_dup_ack(self, ack_seqno):
+        if self.ackPool.size() == 3:
         # implement fast retransmit
-            while self.ackPool.isEmpty() == False:
-                self.ackPool.deQueue()
+            self.ackPool.cleanQueue()
             if self.mode == CUMACK:
-                packet = self.window.locatePacket(ack)
+                packet = self.window.locatePacket(ack_seqno)
                 self.sendingQueue.enQueue(packet)
             else:
-                self.handle_timeout
-        elif ackPool < 3:
-            self.ackPool.enQueue(ack)
+                self.sendingQueue.enQueue(self.window.getUnACKPackets())
+        elif self.ackPool.size() < 3:
+            self.ackPool.enQueue(ack_seqno)
         else:
-            print("error, current ackpool size more than 3")
-
-
+            print("error, current ackPool size more than 3")
 
     #################### Helper Functions ##############################
 
@@ -135,47 +126,47 @@ class Sender(BasicSender.BasicSender):
         if self.debug:
             print msg
 
-
-
 ################## Helper Packet Classes ####################
 
 class InternalACKPacket(object):
     def __init__(self, msg_type, seqnoStr):
-        self.msg_type = msg_type
-        if msg_type == 'sack':
+        self._msg_type = msg_type
+        self._sAcks = []
+        if self._msg_type == 'sack':
             tmp = seqnoStr.split(';')
-            self.cumAckNo = tmp[0]
-            self.sAcks = tmp[1].split(',')
+            self._cumAckNo = int(tmp[0])
+            tmpStrLst = tmp[1].split(',')
+            for el in tmpStrLst:
+                self._sAcks.append(int(el))
         else:
-            self.cumAckNo = seqnoStr
-            self.sAcks = []
+            self._cumAckNo = int(seqnoStr)
 
-    def msgtype(self):
-        return self.msg_type
+    def getMsgtype(self):
+        return self._msg_type
 
-    def cumAckNo(self):
-        return self.cumAckNo
+    def getCumAckNo(self):
+        return self._cumAckNo
 
-    def sAcks(self):
-        return self.sAcks
-
-
+    def getSack(self):
+        return self._sAcks
 
 class WindowElement(object):
     def __init__(self, packet, seqno):
-        self.packet = packet
-        self._seqno = seqno
+        self._packet = packet
+        self._seqno = int(seqno)
         self._isAcked = False
 
     def setAcked (self):
         self._isAcked = True
 
     def seqno(self):
-        return self.seqno
+        return self._seqno
 
     def isAcked(self):
         return self._isAcked
 
+    def getPacket(self):
+        return self._packet
 
 #####################################################
 
@@ -185,10 +176,9 @@ class Queue(object):
     def __init__(self):
         self._que = []
 
-
     def deQueue(self):
         if not self.isEmpty():
-            self._que.pop(0)
+            return self._que.pop(0)
         else:
             print("que is isEmpty")
 
@@ -201,9 +191,72 @@ class Queue(object):
     def size(self):
         return len(self._que)
 
-    def peek(self):
-        return self._que(0)
+# Packet Pool
+class PacketPool(Queue):
+    def __init__(self, filename, sender):
+        Queue.__init__(self)
+        self._sizeLimit = MAX_BUFFER_PACKETS
+        self.filename = filename
+        self.finished = False
+        self.sender = sender
+        self.seqno = 0
 
+        try:
+            if self.isEmptyfile():
+                print("more handle needed")
+            else:
+                self._filePtr = open(self.filename, 'r')
+                self.initialLoad()
+        except IOError:
+            print(filename + "doesn't exist")
+    
+    def deQueue(self):
+        return_packet = Queue.deQueue(self)
+        if not self.finished:
+            content = self._filePtr.read(MAX_PACKET_SIZE)
+            if len(content) == 0:
+                self.finish_load()
+            else:
+                packet = Sender.make_packet(self.sender, 'data', self.seqno, content)
+                self.enQueue(packet)
+                self.seqno += 1
+        return return_packet
+
+
+    def initialLoad(self):
+        content = self._filePtr.read(MAX_PACKET_SIZE)
+        while self.size() < self._sizeLimit and len(content) != 0:
+            if self.seqno == 0:
+                packet = Sender.make_packet(self.sender, 'start', self.seqno, content)
+            else:
+                packet = Sender.make_packet(self.sender, 'data', self.seqno, content)
+            self.enQueue(packet)
+            content = self._filePtr.read(MAX_PACKET_SIZE)
+            self.seqno += 1
+        if len(content) == 0:
+            self.finish_load()
+            
+    def finish_load(self):
+        if not self.isEmpty():
+            self.finished = True
+            self._filePtr.close()
+            tail = self._que.pop(-1)
+            msg_type, seqno, data, checksum = Sender.split_packet(self.sender, tail)
+            self.enQueue(Sender.make_packet(self.sender, 'end', int(seqno), data))
+
+    def isEmptyfile(self):
+        tmpPtr = open(self.filename, 'r')
+        length = len(tmpPtr.read())
+        tmpPtr.close()
+        return length == 0
+
+    def handle_empty_file(self):
+        tmpPtr = open(self.filename, 'w')
+        tmpPtr.write(raw_input(">"))
+        tmpPtr.close()
+        tmpPtr = open(self.filename, 'r')
+        return tmpPtr
+        
 # sliding windown class
 class Window(Queue):
     def enQueue(self, element):
@@ -216,33 +269,38 @@ class Window(Queue):
         unAckLst = []
         for winElt in self._que:
             if not winElt.isAcked():
-                unAckLst.append(winElt)
+                unAckLst.append(winElt.getPacket())
         return unAckLst
+
+    def getAllPackets(self):
+        allPacket = []
+        for winElt in self._que:
+            allPacket.append(winElt.getPacket())
+        return allPacket
     
     def processAck(self, cumAckNo):
         space = 0
-        for winElt in self.que:
+        for winElt in self._que:
             if winElt.seqno() < cumAckNo:
-                self.que.remove(winElt)
+                self._que.remove(winElt)
                 space += 1;
         return space
 
-    def locatePacket(self, ack):
+    def locatePacket(self, ack_seqno):
         for elem in self._que:
-            if elem.seqno == ack:
+            if elem.seqno() == ack_seqno:
                 return elem.packet
 
-    def setIsAcked(self, ack):
+    def setIsAcked(self, ack_seqno):
         for elem in self._que:
-            if elem.seqno == ack:
+            if elem.seqno() == ack_seqno:
                 elem.setAcked()
-
 
 # sending queue class
 class SendQueue(Queue):
     def extendQueue(self, lst):
         if lst != None and len(lst) != 0:
-            self._que.extendQueue(lst)
+            self._que.extend(lst)
         else:
             print("lst is None or isEmpty")
 
@@ -250,15 +308,15 @@ class SendQueue(Queue):
 class AckPool(Queue):
     def __init__(self):
         Queue.__init__(self)
-        self.largestAckSoFar = -1
+        self._largestAckSoFar = -1
 
     def largestAckSoFar(self):
-        return self.largestAckSoFar()
+        return self._largestAckSoFar
 
     def enQueue(self, element):
-        if element > self.largestAckSoFar:
-            self.largestAckSoFar = element
-        if type(element) == InternalACKPacket and self.size() < 4:
+        if element > self._largestAckSoFar:
+            self._largestAckSoFar = element
+        if type(element) == int and self.size() < 4:
             if not self.isEmpty():
                 assert element.cumAckNo == self.que[0].cumAckNo, "ERROR: In ACK pool, element ACKNO != que[0] ACKNO"
             Queue.enQueue(self, element)
