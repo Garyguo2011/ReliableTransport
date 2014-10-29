@@ -47,9 +47,9 @@ class Sender(BasicSender.BasicSender):
             while not self.sendingQueue.isEmpty():
                 sendingPacket = self.sendingQueue.deQueue()
                 self.send(sendingPacket)
-                print(sendingPacket)
+                # print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)
-            print(response)
+            # print(response)
             if response == None:
                 self.handle_timeout()
             else:
