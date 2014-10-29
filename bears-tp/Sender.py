@@ -9,8 +9,8 @@ import BasicSender
 CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
-MAX_BUFFER_PACKETS = 30
-MAX_PACKET_SIZE = 32    # 1472 - 32
+MAX_BUFFER_PACKETS = 10
+MAX_PACKET_SIZE = 16    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -23,7 +23,6 @@ class Sender(BasicSender.BasicSender):
         # initial first 5 packet to window
         # put first 5 packets to sendingQueue
         self.packetPool = PacketPool(filename, self)
-        print(self.packetPool.size())
         self.window = Window()
         self.sendingQueue = SendQueue()
         self.ackPool = AckPool()
@@ -50,11 +49,12 @@ class Sender(BasicSender.BasicSender):
                 self.send(sendingPacket)
                 print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)
-            print(response)
+            # print(response)
             if response == None:
                 self.handle_timeout()
             else:
                 self.handle_response(response)
+
 
     def handle_timeout(self):
         if self.mode == CUMACK:
@@ -91,10 +91,14 @@ class Sender(BasicSender.BasicSender):
         self.ackPool.cleanQueue()
         self.ackPool.enQueue(ack_seqno)
         space = self.window.processAck(ack_seqno)
+        # print("space" + str(space))
         while space > 0 and not self.packetPool.isEmpty():
             tmp_packet = self.packetPool.deQueue()
             self.sendingQueue.enQueue(tmp_packet)
+            # print("window Size" + str(self.window.size()))
+            # print("tmp_packet:" + tmp_packet)
             self.window.enQueue(self.windowElementGenerator(tmp_packet))
+            space -= 1
 
     def handle_dup_ack(self, ack_seqno):
         if self.ackPool.size() == 3:
@@ -214,6 +218,7 @@ class PacketPool(Queue):
         return_packet = Queue.deQueue(self)
         if not self.finished:
             content = self._filePtr.read(MAX_PACKET_SIZE)
+            # print(content)
             if len(content) == 0:
                 self.finish_load()
             else:
@@ -231,7 +236,8 @@ class PacketPool(Queue):
             else:
                 packet = Sender.make_packet(self.sender, 'data', self.seqno, content)
             self.enQueue(packet)
-            content = self._filePtr.read(MAX_PACKET_SIZE)
+            if self.size() < self._sizeLimit:
+                content = self._filePtr.read(MAX_PACKET_SIZE)
             self.seqno += 1
         if len(content) == 0:
             self.finish_load()
@@ -282,6 +288,7 @@ class Window(Queue):
         space = 0
         for winElt in self._que:
             if winElt.seqno() < cumAckNo:
+                # print("Queue Rmove" + str(winElt.seqno()))
                 self._que.remove(winElt)
                 space += 1;
         return space
@@ -318,7 +325,7 @@ class AckPool(Queue):
             self._largestAckSoFar = element
         if type(element) == int and self.size() < 4:
             if not self.isEmpty():
-                assert element.cumAckNo == self.que[0].cumAckNo, "ERROR: In ACK pool, element ACKNO != que[0] ACKNO"
+                assert element == self._que[0], "ERROR: In ACK pool, element ACKNO != que[0] ACKNO"
             Queue.enQueue(self, element)
         else:
             print("Fast Retransmission didn't happen")
