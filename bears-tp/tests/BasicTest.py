@@ -52,9 +52,9 @@ class BasicTest(object):
 
         The default behavior of this method is to do nothing.
         """
-        print("**********************")
-        print(self.forwarder.in_queue)
-        print(self.forwarder.out_queue)
+        # print("**********************")
+        # print(self.forwarder.in_queue)
+        # print(self.forwarder.out_queue)
 
     def result(self, receiver_outfile):
         """
