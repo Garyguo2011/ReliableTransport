@@ -10,7 +10,7 @@ CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
 MAX_BUFFER_PACKETS = 10
-MAX_PACKET_SIZE = 16    # 1472 - 32
+MAX_PACKET_SIZE = 32    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -49,7 +49,7 @@ class Sender(BasicSender.BasicSender):
                 self.send(sendingPacket)
                 # print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)
-            # print(response)
+            print(response)
             if response == None:
                 self.handle_timeout()
             else:
@@ -227,14 +227,13 @@ class PacketPool(Queue):
                 self.seqno += 1
         return return_packet
 
-
     def initialLoad(self):
+        self.seqno = 0
+        self.enQueue(Sender.make_packet(self.sender, 'start', self.seqno, ""))
+        self.seqno += 1
         content = self._filePtr.read(MAX_PACKET_SIZE)
         while self.size() < self._sizeLimit and len(content) != 0:
-            if self.seqno == 0:
-                packet = Sender.make_packet(self.sender, 'start', self.seqno, content)
-            else:
-                packet = Sender.make_packet(self.sender, 'data', self.seqno, content)
+            packet = Sender.make_packet(self.sender, 'data', self.seqno, content)
             self.enQueue(packet)
             if self.size() < self._sizeLimit:
                 content = self._filePtr.read(MAX_PACKET_SIZE)
@@ -296,7 +295,7 @@ class Window(Queue):
     def locatePacket(self, ack_seqno):
         for elem in self._que:
             if elem.seqno() == ack_seqno:
-                return elem.packet
+                return elem.getPacket()
 
     def setIsAcked(self, ack_seqno):
         for elem in self._que:
