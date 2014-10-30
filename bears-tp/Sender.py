@@ -48,7 +48,7 @@ class Sender(BasicSender.BasicSender):
                 sendingPacket = self.sendingQueue.deQueue()
                 # print(sendingPacket)
                 msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
-                # print msg_type, '***', seqno
+                print msg_type, '***', seqno
                 self.send(sendingPacket)
                 # print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)

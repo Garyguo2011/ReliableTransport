@@ -15,13 +15,14 @@ you want to run. The tests automatically register themselves with the
 forwarder, so they will magically be run.
 """
 def tests_to_run(forwarder):
-    from tests import BasicTest, RandomDropTest, SackRandomDropTest, SingleDropTest, DataCorruptionTest, SeqnoCorruptionTest
+    from tests import BasicTest, RandomDropTest, SackRandomDropTest, SingleDropTest, DataCorruptionTest, SeqnoCorruptionTest, DuplicateTest
     # BasicTest.BasicTest(forwarder, "README")
     # RandomDropTest.RandomDropTest(forwarder, "README")
     # SackRandomDropTest.SackRandomDropTest(forwarder, "README")
     # SingleDropTest.SingleDropTest(forwarder, "README")
-    # DataCorruptionTest.DataCorruptionTest(forwarder, "README")
-    SeqnoCorruptionTest.SeqnoCorruptionTest(forwarder, "README")
+    DataCorruptionTest.DataCorruptionTest(forwarder, "README")
+    # SeqnoCorruptionTest.SeqnoCorruptionTest(forwarder, "README")
+    # DuplicateTest.DuplicateTest(forwarder, "README")
 
 """
 Testing is divided into two pieces: this forwarder and a set of test cases in
@@ -256,6 +257,7 @@ class Packet(object):
             self.bogon = True
 
     def update_packet(self, msg_type=None, seqno=None, data=None, full_packet=None, update_checksum=True):
+    # def update_packet(self, msg_type=None, seqno=None, data=None, full_packet=None, update_checksum=False):
         """
         This function handles safely changing the contents of a packet. By
         default, we re-compute the checksum every time the packet is updated.
