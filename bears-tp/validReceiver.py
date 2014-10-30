@@ -41,6 +41,7 @@ class Connection():
         else:
             return str(self.current_seqno+1), res_data
 
+
     def record(self,data):
         self.outfile.write(data)
         self.outfile.flush()
@@ -67,29 +68,26 @@ class Receiver():
             'end' : self._handle_end,
             'ack' : self._handle_ack
         }
-        self.droplist = [5]
 
     def start(self):
         while True:
             try:
                 message, address = self.receive()
                 msg_type, seqno, data, checksum = self._split_message(message)
-                
                 try:
                     seqno = int(seqno)
                 except:
                     raise ValueError
-
-                if not seqno in self.droplist:
-                    if debug:
-                        print "Receiver.py: received %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
-                    if Checksum.validate_checksum(message):
-                        self.MESSAGE_HANDLER.get(msg_type,self._handle_other)(seqno, data, address)
-                    elif self.debug:
-                        print "Receiver.py: checksum failed: %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
+                # print "Receiver.py: received %s|%d|%s" % (msg_type, seqno, checksum)
+                if debug:
+                    print "Receiver.py: received %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
+                if Checksum.validate_checksum(message):
+                    print("received: " + msg_type + " " + str(seqno))
+                    self.MESSAGE_HANDLER.get(msg_type,self._handle_other)(seqno, data, address)
+                elif self.debug:
+                    print "Receiver.py: checksum failed: %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
                 else:
-                    print "Receiver.py: drop %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
-                    self.droplist.remove(seqno)
+                    print("Invaild: " + msg_type + " " + str(seqno))
 
                 if time.time() - self.last_cleanup > self.timeout:
                     self._cleanup()
@@ -153,6 +151,7 @@ class Receiver():
             for l in res_data:
                 #if self.debug:
                 #    print l
+                print(l)
                 conn.record(l)
             self._send_ack(ackno, address)
 
