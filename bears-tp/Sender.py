@@ -10,7 +10,7 @@ CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
 MAX_BUFFER_PACKETS = 10
-MAX_PACKET_SIZE = 1440    # 1472 - 32
+MAX_PACKET_SIZE = 32    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -49,7 +49,7 @@ class Sender(BasicSender.BasicSender):
                 self.send(sendingPacket)
                 # print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)
-            # print(response)
+            print(response)
             if response == None:
                 self.handle_timeout()
             else:
@@ -141,6 +141,7 @@ class InternalACKPacket(object):
             self._cumAckNo = int(tmp[0])
             tmpStrLst = tmp[1].split(',')
             for el in tmpStrLst:
+                print(el)
                 self._sAcks.append(int(el))
         else:
             self._cumAckNo = int(seqnoStr)
