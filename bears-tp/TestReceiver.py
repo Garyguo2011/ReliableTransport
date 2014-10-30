@@ -41,7 +41,6 @@ class Connection():
         else:
             return str(self.current_seqno+1), res_data
 
-
     def record(self,data):
         self.outfile.write(data)
         self.outfile.flush()

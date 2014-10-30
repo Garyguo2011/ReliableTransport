@@ -50,6 +50,9 @@ class Sender(BasicSender.BasicSender):
             
             while not self.sendingQueue.isEmpty():
                 sendingPacket = self.sendingQueue.deQueue()
+                # print(sendingPacket)
+                msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
+                # print msg_type, '***', seqno
                 self.send(sendingPacket)
                 # print(self.split_packet(sendingPacket)[0:2])
             
@@ -79,6 +82,8 @@ class Sender(BasicSender.BasicSender):
                 self.handle_cum_ack(internalACKPacket)
             elif internalACKPacket.getMsgtype() == 'sack':
                 self.handle_sack_ack(internalACKPacket)
+        else:
+            print('checksum drop')
 
     # [add]: Handle selective ACKs.
     def handle_sack_ack(self, internalACKPacket):
