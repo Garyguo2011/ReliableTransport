@@ -51,8 +51,8 @@ class Sender(BasicSender.BasicSender):
                 sendingPacket = self.sendingQueue.deQueue()
                 
                 # print(sendingPacket)
-                msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
-                print msg_type, '***', seqno
+                # msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
+                # print msg_type, '***', seqno
 
                 self.send(sendingPacket)
                 # print(sendingPacket)
