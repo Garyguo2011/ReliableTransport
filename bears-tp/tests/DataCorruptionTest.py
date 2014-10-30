@@ -12,7 +12,7 @@ class DataCorruptionTest(BasicTest):
             
             if random.choice([True, False]):
 
-                p.update_packet(None, None, 'bao bao is a big fool')
+                p.update_packet(None, None, 'xu he is a big fool', update_checksum=False)
             self.forwarder.out_queue.append(p)
         # empty out the in_queue
         self.forwarder.in_queue = []

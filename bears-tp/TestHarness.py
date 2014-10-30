@@ -18,7 +18,7 @@ def tests_to_run(forwarder):
     from tests import BasicTest, RandomDropTest, SackRandomDropTest, SingleDropTest, DataCorruptionTest, SeqnoCorruptionTest
     BasicTest.BasicTest(forwarder, "README")
     RandomDropTest.RandomDropTest(forwarder, "README")
-    SackRandomDropTest.SackRandomDropTest(forwarder, "testfile")
+    SackRandomDropTest.SackRandomDropTest(forwarder, "README")
     SingleDropTest.SingleDropTest(forwarder, "README")
     DataCorruptionTest.DataCorruptionTest(forwarder, "README")
     SeqnoCorruptionTest.SeqnoCorruptionTest(forwarder, "README")
