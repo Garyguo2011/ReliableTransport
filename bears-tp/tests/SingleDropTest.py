@@ -12,7 +12,7 @@ class SingleDropTest(BasicTest):
         for p in self.forwarder.in_queue:
             msg_type, seqno, data, checksum = self.split_packet(p.full_packet)
             if msg_type == 'ack' and seqno == '3' and SingleDropTest.appearance == 0:
-                print('here')
+                # print('here')
                 SingleDropTest.appearance = SingleDropTest.appearance + 1
                 continue
                 

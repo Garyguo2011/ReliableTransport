@@ -9,8 +9,8 @@ import BasicSender
 CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
-MAX_BUFFER_PACKETS = 10
-MAX_PACKET_SIZE = 32    # 1472 - 32
+MAX_BUFFER_PACKETS = 20
+MAX_PACKET_SIZE = 1440    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -27,7 +27,6 @@ class Sender(BasicSender.BasicSender):
         self.sendingQueue = SendQueue()
         self.ackPool = AckPool()
         self.initialComponentLoad()
-
         if sackMode:
             self.mode = SACK
         else:
@@ -42,18 +41,28 @@ class Sender(BasicSender.BasicSender):
 
     # Main sending loop.
     def start(self):
+        tmp = 1
         while not self.window.isEmpty():
             # print(self.window)
+            
+            # print("Round: " + str(tmp))
+            # print("--- Sending out ---")
+            
             while not self.sendingQueue.isEmpty():
                 sendingPacket = self.sendingQueue.deQueue()
                 self.send(sendingPacket)
-                # print(sendingPacket)
+                # print(self.split_packet(sendingPacket)[0:2])
+            
+            # print("---- receive ACK---")
+
             response = self.receive(TIMEOUT_CONSTANT)
             # print(response)
+            # print(" ")
             if response == None:
                 self.handle_timeout()
             else:
                 self.handle_response(response)
+            tmp += 1
 
 
     def handle_timeout(self):
@@ -208,10 +217,12 @@ class PacketPool(Queue):
 
         try:
             if self.isEmptyfile():
-                print("more handle needed")
+                self._filePtr = sys.stdin
+                # print("empty filename")
+                # print(self._filePtr.read())
             else:
                 self._filePtr = open(self.filename, 'r')
-                self.initialLoad()
+            self.initialLoad()
         except IOError:
             print(filename + "doesn't exist")
     
@@ -248,7 +259,9 @@ class PacketPool(Queue):
             self._filePtr.close()
             tail = self._que.pop(-1)
             msg_type, seqno, data, checksum = Sender.split_packet(self.sender, tail)
-            self.enQueue(Sender.make_packet(self.sender, 'end', int(seqno), data))
+            packet = Sender.make_packet(self.sender, 'end', int(seqno), data)
+            self.enQueue(packet)
+
 
     def isEmptyfile(self):
         tmpPtr = open(self.filename, 'r')
@@ -272,7 +285,6 @@ class Window(Queue):
             print("element is not WindowElement or current size > 5")
 
     def getUnACKPackets(self):
-        print("call here")
         unAckLst = []
         for winElt in self._que:
             if not winElt.isAcked():
