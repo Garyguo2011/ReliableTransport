@@ -51,8 +51,8 @@ class Sender(BasicSender.BasicSender):
                 sendingPacket = self.sendingQueue.deQueue()
                 
                 # print(sendingPacket)
-                msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
-                print msg_type, '***', seqno
+                # msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
+                # print msg_type, '***', seqno
 
                 self.send(sendingPacket)
                 # print(sendingPacket)
@@ -276,13 +276,6 @@ class PacketPool(Queue):
         tmpPtr.close()
         return length == 0
 
-    def handle_empty_file(self):
-        tmpPtr = open(self.filename, 'w')
-        tmpPtr.write(raw_input(">"))
-        tmpPtr.close()
-        tmpPtr = open(self.filename, 'r')
-        return tmpPtr
-        
 # sliding windown class
 class Window(Queue):
     def enQueue(self, element):
