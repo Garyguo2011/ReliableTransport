@@ -10,7 +10,7 @@ CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
 MAX_BUFFER_PACKETS = 20
-MAX_PACKET_SIZE = 1440    # 1472 - 32
+MAX_PACKET_SIZE = 32    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -47,26 +47,24 @@ class Sender(BasicSender.BasicSender):
             
             # print("Round: " + str(tmp))
             # print("--- Sending out ---")
-            
             while not self.sendingQueue.isEmpty():
                 sendingPacket = self.sendingQueue.deQueue()
-                # print(sendingPacket)
-                msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
-                # print msg_type, '***', seqno
                 self.send(sendingPacket)
+                # print(sendingPacket)
+                # msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
+                # print msg_type, '***', seqno
                 # print(self.split_packet(sendingPacket)[0:2])
-            
-            # print("---- receive ACK---")
 
             response = self.receive(TIMEOUT_CONSTANT)
+            # print("---- receive ACK---")
             # print(response)
             # print(" ")
+
             if response == None:
                 self.handle_timeout()
             else:
                 self.handle_response(response)
             tmp += 1
-
 
     def handle_timeout(self):
         if self.mode == CUMACK:
@@ -78,12 +76,12 @@ class Sender(BasicSender.BasicSender):
     def handle_response(self, response_packet):
         if Checksum.validate_checksum(response_packet):
             internalACKPacket = self.internalACKPacketGenerator(response_packet)
-            if internalACKPacket.getMsgtype() == 'ack':
+            if internalACKPacket.getMsgtype() == 'ack' and self.window.validateAckPacket(internalACKPacket):
                 self.handle_cum_ack(internalACKPacket)
-            elif internalACKPacket.getMsgtype() == 'sack':
+            elif internalACKPacket.getMsgtype() == 'sack'and self.window.validateAckPacket(internalACKPacket):
                 self.handle_sack_ack(internalACKPacket)
         else:
-            print('checksum drop')
+            print('checksum drop or Window does not contain seqno')
 
     # [add]: Handle selective ACKs.
     def handle_sack_ack(self, internalACKPacket):
@@ -267,7 +265,6 @@ class PacketPool(Queue):
             packet = Sender.make_packet(self.sender, 'end', int(seqno), data)
             self.enQueue(packet)
 
-
     def isEmptyfile(self):
         tmpPtr = open(self.filename, 'r')
         length = len(tmpPtr.read())
@@ -307,7 +304,6 @@ class Window(Queue):
         for winElt in self._que:
             if winElt.seqno() < cumAckNo:
                 removeList.append(winElt)
-
         space = 0
         for winElt in removeList:
             # print("Queue Rmove" + str(winElt.seqno()))
@@ -325,10 +321,26 @@ class Window(Queue):
             if elem.seqno() == ack_seqno:
                 elem.setAcked()
 
+    def validateAckPacket(self, internalACKPacket):
+        valid = True
+        seqnoInWindow = []
+        largestSeqno = -1
+        for elem in self._que:
+            if largestSeqno < elem.seqno():
+                largestSeqno = elem.seqno()
+            seqnoInWindow.append(elem.seqno())
+        if (not internalACKPacket.getCumAckNo() in seqnoInWindow) and internalACKPacket.getCumAckNo() != largestSeqno + 1:
+            valid = False
+        if internalACKPacket.getMsgtype() == 'sack' and len(internalACKPacket.getSack()) != 0:
+            for sackno in internalACKPacket.getSack():
+                if not sackno in seqnoInWindow:
+                    valid = False
+        return valid
+
     def __str__(self):
         inWindow = []
         for elem in self._que:
-            inWindow.append(elem.seqno())
+            inWindow.append((elem.seqno(), elem.isAcked()))
         return str(inWindow)
 
 # sending queue class
