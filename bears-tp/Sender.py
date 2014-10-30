@@ -49,6 +49,11 @@ class Sender(BasicSender.BasicSender):
             # print("--- Sending out ---")
             while not self.sendingQueue.isEmpty():
                 sendingPacket = self.sendingQueue.deQueue()
+                
+                # print(sendingPacket)
+                msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
+                print msg_type, '***', seqno
+
                 self.send(sendingPacket)
                 # print(sendingPacket)
                 # msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
