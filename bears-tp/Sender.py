@@ -10,7 +10,7 @@ CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
 MAX_BUFFER_PACKETS = 10
-MAX_PACKET_SIZE = 32    # 1472 - 32
+MAX_PACKET_SIZE = 200    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -46,6 +46,9 @@ class Sender(BasicSender.BasicSender):
             # print(self.window)
             while not self.sendingQueue.isEmpty():
                 sendingPacket = self.sendingQueue.deQueue()
+                # print(sendingPacket)
+                msg_type, seqno, data, checksum = self.split_packet(sendingPacket)
+                # print msg_type, '***', seqno
                 self.send(sendingPacket)
                 # print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)
@@ -70,6 +73,8 @@ class Sender(BasicSender.BasicSender):
                 self.handle_cum_ack(internalACKPacket)
             elif internalACKPacket.getMsgtype() == 'sack':
                 self.handle_sack_ack(internalACKPacket)
+        else:
+            print('checksum drop')
 
     # [add]: Handle selective ACKs.
     def handle_sack_ack(self, internalACKPacket):
@@ -108,7 +113,7 @@ class Sender(BasicSender.BasicSender):
                 packet = self.window.locatePacket(ack_seqno)
                 self.sendingQueue.enQueue(packet)
             else:
-                self.sendingQueue.enQueue(self.window.getUnACKPackets())
+                self.sendingQueue.extendQueue(self.window.getUnACKPackets())
         elif self.ackPool.size() < 3:
             self.ackPool.enQueue(ack_seqno)
         else:
@@ -139,10 +144,10 @@ class InternalACKPacket(object):
         if self._msg_type == 'sack':
             tmp = seqnoStr.split(';')
             self._cumAckNo = int(tmp[0])
-            tmpStrLst = tmp[1].split(',')
-            for el in tmpStrLst:
-                print(el)
-                self._sAcks.append(int(el))
+            if len(tmp[1]) != 0:
+                tmpStrLst = tmp[1].split(',')
+                for el in tmpStrLst:
+                    self._sAcks.append(int(el))
         else:
             self._cumAckNo = int(seqnoStr)
 
@@ -272,6 +277,7 @@ class Window(Queue):
             print("element is not WindowElement or current size > 5")
 
     def getUnACKPackets(self):
+        # print("call here")
         unAckLst = []
         for winElt in self._que:
             if not winElt.isAcked():

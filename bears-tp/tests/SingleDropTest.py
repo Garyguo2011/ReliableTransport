@@ -8,10 +8,11 @@ should treat it as being randomly dropped.
 """
 class SingleDropTest(BasicTest):
     appearance = 0
+
     def handle_packet(self):
         for p in self.forwarder.in_queue:
             msg_type, seqno, data, checksum = self.split_packet(p.full_packet)
-            if msg_type == 'ack' and seqno == '3' and SingleDropTest.appearance == 0:
+            if msg_type == 'start' and SingleDropTest.appearance == 0:
                 print('here')
                 SingleDropTest.appearance = SingleDropTest.appearance + 1
                 continue
@@ -33,9 +34,4 @@ class SingleDropTest(BasicTest):
         return msg_type, seqno, data, checksum
 
 
-    def make_packet(self,msg_type,seqno,msg,checksum):
-        packet = "%s|%d|%s|%d" % (msg_type,seqno,msg,checksum)
-        # checksum = Checksum.generate_checksum(body)
-        # packet = "%s%s" % (body,checksum)
-        return packet
   

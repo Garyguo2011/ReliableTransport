@@ -15,11 +15,13 @@ you want to run. The tests automatically register themselves with the
 forwarder, so they will magically be run.
 """
 def tests_to_run(forwarder):
-    from tests import BasicTest, RandomDropTest, SackRandomDropTest, SingleDropTest
+    from tests import BasicTest, RandomDropTest, SackRandomDropTest, SingleDropTest, DataCorruptionTest, SeqnoCorruptionTest
     # BasicTest.BasicTest(forwarder, "README")
     # RandomDropTest.RandomDropTest(forwarder, "README")
-    SackRandomDropTest.SackRandomDropTest(forwarder, "README")
+    # SackRandomDropTest.SackRandomDropTest(forwarder, "README")
     # SingleDropTest.SingleDropTest(forwarder, "README")
+    # DataCorruptionTest.DataCorruptionTest(forwarder, "README")
+    SeqnoCorruptionTest.SeqnoCorruptionTest(forwarder, "README")
 
 """
 Testing is divided into two pieces: this forwarder and a set of test cases in
@@ -262,6 +264,7 @@ class Packet(object):
 
         Note that the checksum is calculated over the NON-0-indexed sequence number.
         """
+        # print('here')
         if not self.bogon:
             if msg_type == None:
                 msg_type = self.msg_type
