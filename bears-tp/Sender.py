@@ -10,7 +10,7 @@ CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
 MAX_BUFFER_PACKETS = 20
-MAX_PACKET_SIZE = 1440    # 1472 - 32
+MAX_PACKET_SIZE = 32    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -276,13 +276,6 @@ class PacketPool(Queue):
         tmpPtr.close()
         return length == 0
 
-    def handle_empty_file(self):
-        tmpPtr = open(self.filename, 'w')
-        tmpPtr.write(raw_input(">"))
-        tmpPtr.close()
-        tmpPtr = open(self.filename, 'r')
-        return tmpPtr
-        
 # sliding windown class
 class Window(Queue):
     def enQueue(self, element):
