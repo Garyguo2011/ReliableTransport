@@ -6,15 +6,21 @@ from BasicTest import *
 This tests random pick the the packet from in_queue to corrupt its checksum, the sender
 should treat it as being randomly dropped.
 """
-class Msg_TypeCorruptionTest(BasicTest):
+class SackMsg_TypeCorruptionTest(BasicTest):
+    def __init__(self, forwarder, input_file):
+        super(SackMsg_TypeCorruptionTest, self).__init__(forwarder, input_file, sackMode = True)
+
+
     def handle_packet(self):
         for p in self.forwarder.in_queue:
             
             if random.choice([True, False]):
             	msg_type, seqno, data, checksum = self.split_packet(p.full_packet)
-            	if msg_type == 'ack':
-                	p.update_packet('start', None, None, None)
-            self.forwarder.out_queue.append(p)
+            	if msg_type == 'sack':
+                	p.update_packet('start', 0, None, None)
+                self.forwarder.out_queue.append(p)
+            if random.choice([True, False]):
+                self.forwarder.out_queue.append(p)
         # empty out the in_queue
         self.forwarder.in_queue = []
 

@@ -6,17 +6,25 @@ from BasicTest import *
 This tests random pick the the packet from in_queue to corrupt its checksum, the sender
 should treat it as being randomly dropped.
 """
-class ChecksumCorruptionTest(BasicTest):
+class SackDuplicateTest(BasicTest):
+    def __init__(self, forwarder, input_file):
+        super(SackDuplicateTest, self).__init__(forwarder, input_file, sackMode = True)
+
+
     def handle_packet(self):
         for p in self.forwarder.in_queue:
             
             if random.choice([True, False]):
-            	msg_type, seqno, data, checksum = self.split_packet(p)
-            	corruptChecksum = int(checksum) + 999
-            	p = self.make_packet(msg_type, seqno, data, corruptChecksum)
+            	msg_type, seqno, data, checksum = self.split_packet(p.full_packet)
+            	if msg_type == 'sack':
+                    self.forwarder.out_queue.append(p)
+                    self.forwarder.out_queue.append(p)
+                    self.forwarder.out_queue.append(p)    	
             self.forwarder.out_queue.append(p)
         # empty out the in_queue
         self.forwarder.in_queue = []
+
+
 
 
     def split_packet(self, message):
@@ -25,10 +33,3 @@ class ChecksumCorruptionTest(BasicTest):
         checksum = pieces[-1] # last is always treated as checksum
         data = '|'.join(pieces[2:-1]) # everything in between is considered data
         return msg_type, seqno, data, checksum
-
-
-    def make_packet(self,msg_type,seqno,msg,checksum):
-        packet = "%s|%d|%s|%d" % (msg_type,seqno,msg,checksum)
-        # checksum = Checksum.generate_checksum(body)
-        # packet = "%s%s" % (body,checksum)
-        return packet

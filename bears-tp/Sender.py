@@ -10,7 +10,7 @@ CUMACK = 0
 SACK = 1
 TIMEOUT_CONSTANT = 0.5
 MAX_BUFFER_PACKETS = 20
-MAX_PACKET_SIZE = 32    # 1472 - 32
+MAX_PACKET_SIZE = 200    # 1472 - 32
 MAX_WINDOW_SIZE = 5
 
 '''
@@ -62,7 +62,7 @@ class Sender(BasicSender.BasicSender):
 
             response = self.receive(TIMEOUT_CONSTANT)
             # print("---- receive ACK---")
-            # print(response)
+            print(response)
             # print(" ")
 
             if response == None:

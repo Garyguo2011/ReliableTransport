@@ -16,14 +16,23 @@ forwarder, so they will magically be run.
 """
 def tests_to_run(forwarder):
 
-    from tests import BasicTest, RandomDropTest, SackRandomDropTest, SingleDropTest, DataCorruptionTest, SeqnoCorruptionTest, DuplicateTest
+    from tests import BasicTest, RandomDropTest, SackRandomDropTest, DataCorruptionTest, SeqnoCorruptionTest, DuplicateTest, Msg_TypeCorruptionTest, ComplexErrorTest, SackSeqnoCorruptionTest, SackMsg_TypeCorruptionTest, SackDuplicateTest, SackDataCorruptionTest, SackComplexErrorTest
     # BasicTest.BasicTest(forwarder, "README")
     # RandomDropTest.RandomDropTest(forwarder, "README")
     # SackRandomDropTest.SackRandomDropTest(forwarder, "README")
-    # SingleDropTest.SingleDropTest(forwarder, "README")
-    DataCorruptionTest.DataCorruptionTest(forwarder, "README")
+    # DataCorruptionTest.DataCorruptionTest(forwarder, "README")
     # SeqnoCorruptionTest.SeqnoCorruptionTest(forwarder, "README")
     # DuplicateTest.DuplicateTest(forwarder, "README")
+    # Msg_TypeCorruptionTest.Msg_TypeCorruptionTest(forwarder, "README")
+    # ComplexErrorTest.ComplexErrorTest(forwarder, "README")
+    # SackSeqnoCorruptionTest.SackSeqnoCorruptionTest(forwarder, "README")
+    # SackMsg_TypeCorruptionTest.SackMsg_TypeCorruptionTest(forwarder, "README")
+    # SackDuplicateTest.SackDuplicateTest(forwarder, "README")
+    # SackDataCorruptionTest.SackDataCorruptionTest(forwarder, "README")
+    SackComplexErrorTest.SackComplexErrorTest(forwarder, "README")
+
+
+
 
 
 
@@ -260,7 +269,7 @@ class Packet(object):
             self.bogon = True
 
     # def update_packet(self, msg_type=None, seqno=None, data=None, full_packet=None, update_checksum=True):
-    def update_packet(self, msg_type=None, seqno=None, data=None, full_packet=None, update_checksum=False):
+    def update_packet(self, msg_type=None, seqno=None, data=None, full_packet=None, update_checksum=True):
         """
         This function handles safely changing the contents of a packet. By
         default, we re-compute the checksum every time the packet is updated.
