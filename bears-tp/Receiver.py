@@ -81,7 +81,6 @@ class Receiver():
                 if debug:
                     print "Receiver.py: received %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)
                 if Checksum.validate_checksum(message):
-                    # print(">>>>>>>>received Correct: " + msg_type + " " + str(seqno) + "<<<<<<<<<" + data)
                     self.MESSAGE_HANDLER.get(msg_type,self._handle_other)(seqno, data, address)
                 elif self.debug:
                     print "Receiver.py: checksum failed: %s|%d|%s|%s" % (msg_type, seqno, data[:5], checksum)

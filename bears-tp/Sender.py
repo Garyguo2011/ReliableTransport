@@ -24,10 +24,10 @@ This is a skeleton sender class. Create a fantastic transport protocol here.
 '''
 class Sender(BasicSender.BasicSender):
     def __init__(self, dest, port, filename, debug=False, sackMode=False):
-        super(Sender, self).__init__(dest, port, filename, debug)
-        # File Spliter and put all packet into packetPool
-        # initial first 5 packet to window
-        # put first 5 packets to sendingQueue
+        try:
+            super(Sender, self).__init__(dest, port, filename, debug)
+        except IOError:
+            print("'" + filename + "' doesn't exist")
         self.packetPool = PacketPool(filename, self)
         self.window = Window()
         self.sendingQueue = SendQueue()
@@ -50,7 +50,6 @@ class Sender(BasicSender.BasicSender):
         tmp = 1
         while not self.window.isEmpty():
             # print(self.window)
-            
             # print("Round: " + str(tmp))
             # print("--- Sending out ---")
             while not self.sendingQueue.isEmpty():
@@ -58,12 +57,10 @@ class Sender(BasicSender.BasicSender):
                 self.send(sendingPacket)
                 # print(sendingPacket)
                 # print(self.split_packet(sendingPacket)[0:2])
-
             response = self.receive(TIMEOUT_CONSTANT)
             # print("---- receive ACK---")
             # print(response)
             # print(" ")
-
             if response == None:
                 self.handle_timeout()
             else:
@@ -109,12 +106,9 @@ class Sender(BasicSender.BasicSender):
         self.ackPool.cleanQueue()
         self.ackPool.enQueue(ack_seqno)
         space = self.window.processAck(ack_seqno)
-        # print("space" + str(space))
         while space > 0 and not self.packetPool.isEmpty():
             tmp_packet = self.packetPool.deQueue()
             self.sendingQueue.enQueue(tmp_packet)
-            # print("window Size" + str(self.window.size()))
-            # print("tmp_packet:" + tmp_packet)
             self.window.enQueue(self.windowElementGenerator(tmp_packet))
             space -= 1
 
@@ -130,7 +124,8 @@ class Sender(BasicSender.BasicSender):
         elif self.ackPool.size() < 3:
             self.ackPool.enQueue(ack_seqno)
         else:
-            print("error, current ackPool size more than 3")
+            # print("error, current ackPool size more than 3")
+            pass
 
     #################### Helper Functions ##############################
 
@@ -203,7 +198,8 @@ class Queue(object):
         if not self.isEmpty():
             return self._que.pop(0)
         else:
-            print("que is isEmpty")
+            # print("que is isEmpty")
+            pass
 
     def enQueue(self, element):
         self._que.append(element)
@@ -223,23 +219,19 @@ class PacketPool(Queue):
         self.finished = False
         self.sender = sender
         self.seqno = 0
-
         try:
-            if self.isEmptyfile():
+            if self.filename == None or self.isEmptyfile():
                 self._filePtr = sys.stdin
-                # print("empty filename")
-                # print(self._filePtr.read())
             else:
                 self._filePtr = open(self.filename, 'r')
             self.initialLoad()
         except IOError:
-            print(filename + "doesn't exist")
+            pass
     
     def deQueue(self):
         return_packet = Queue.deQueue(self)
         if not self.finished:
             content = self._filePtr.read(MAX_PACKET_SIZE)
-            # print(content)
             if len(content) == 0:
                 self.finish_load()
             else:
@@ -283,7 +275,8 @@ class Window(Queue):
         if type(element) == WindowElement and self.size() < 5:
             Queue.enQueue(self, element);
         else:
-            print("element is not WindowElement or current size > 5")
+            # print("element is not WindowElement or current size > 5")
+            pass
 
     def getUnACKPackets(self):
         unAckLst = []
@@ -305,7 +298,6 @@ class Window(Queue):
                 removeList.append(winElt)
         space = 0
         for winElt in removeList:
-            # print("Queue Rmove" + str(winElt.seqno()))
             self._que.remove(winElt)
             space += 1;
         return space
@@ -348,7 +340,8 @@ class SendQueue(Queue):
         if lst != None and len(lst) != 0:
             self._que.extend(lst)
         else:
-            print("lst is None or isEmpty")
+            # print("lst is None or isEmpty")
+            pass
 
 # ack pool class
 class AckPool(Queue):
@@ -364,10 +357,12 @@ class AckPool(Queue):
             self._largestAckSoFar = element
         if type(element) == int and self.size() < 4:
             if not self.isEmpty():
-                assert element == self._que[0], "ERROR: In ACK pool, element ACKNO != que[0] ACKNO"
+                # assert element == self._que[0], "ERROR: In ACK pool, element ACKNO != que[0] ACKNO"
+                pass
             Queue.enQueue(self, element)
         else:
-            print("Fast Retransmission didn't happen")
+            pass
+            # print("Fast Retransmission didn't happen")
 
     def cleanQueue(self):
         del self._que[:]
