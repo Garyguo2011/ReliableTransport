@@ -67,7 +67,7 @@ class Receiver():
             'end' : self._handle_end,
             'ack' : self._handle_ack
         }
-        self.droplist = [5]
+        self.droplist = [3, 4, 5]
 
     def start(self):
         while True:

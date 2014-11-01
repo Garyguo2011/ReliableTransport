@@ -17,23 +17,23 @@ forwarder, so they will magically be run.
 def tests_to_run(forwarder):
 
     from tests import BasicTest, RandomDropTest, SackRandomDropTest, DataCorruptionTest, SeqnoCorruptionTest, DuplicateTest, Msg_TypeCorruptionTest, ComplexErrorTest, SackSeqnoCorruptionTest, SackMsg_TypeCorruptionTest, SackDuplicateTest, SackDataCorruptionTest, SackComplexErrorTest
-    # BasicTest.BasicTest(forwarder, "README")
-    # RandomDropTest.RandomDropTest(forwarder, "README")
-    # SackRandomDropTest.SackRandomDropTest(forwarder, "README")
-    # DataCorruptionTest.DataCorruptionTest(forwarder, "README")
-    # SeqnoCorruptionTest.SeqnoCorruptionTest(forwarder, "README")
-    # DuplicateTest.DuplicateTest(forwarder, "README")
-    # Msg_TypeCorruptionTest.Msg_TypeCorruptionTest(forwarder, "README")
-    # ComplexErrorTest.ComplexErrorTest(forwarder, "README")
-    # SackSeqnoCorruptionTest.SackSeqnoCorruptionTest(forwarder, "README")
-    # SackMsg_TypeCorruptionTest.SackMsg_TypeCorruptionTest(forwarder, "README")
-    # SackDuplicateTest.SackDuplicateTest(forwarder, "README")
-    # SackDataCorruptionTest.SackDataCorruptionTest(forwarder, "README")
-    SackComplexErrorTest.SackComplexErrorTest(forwarder, "README")
+    fileSet = ["README","example.bz2","example.doc","example.pdf","example.png","example.ppt","example.xlsx","lorem-ipsum.txt","oneChacter","oneLine","onepara","quick.sh","tmp"]
 
-
-
-
+    for filename in fileSet:
+        # print(">>>> current test: " + "fileSet/" + filename)
+        BasicTest.BasicTest(forwarder, "fileSet/" + filename)
+        RandomDropTest.RandomDropTest(forwarder, "fileSet/" + filename)
+        SackRandomDropTest.SackRandomDropTest(forwarder, "fileSet/" + filename)
+        DataCorruptionTest.DataCorruptionTest(forwarder, "fileSet/" + filename)
+        SeqnoCorruptionTest.SeqnoCorruptionTest(forwarder, "fileSet/" + filename)
+        DuplicateTest.DuplicateTest(forwarder, "fileSet/" + filename)
+        Msg_TypeCorruptionTest.Msg_TypeCorruptionTest(forwarder, "fileSet/" + filename)
+        ComplexErrorTest.ComplexErrorTest(forwarder, "fileSet/" + filename)
+        SackSeqnoCorruptionTest.SackSeqnoCorruptionTest(forwarder, "fileSet/" + filename)
+        SackMsg_TypeCorruptionTest.SackMsg_TypeCorruptionTest(forwarder, "fileSet/" + filename)
+        SackDuplicateTest.SackDuplicateTest(forwarder, "fileSet/" + filename)
+        SackDataCorruptionTest.SackDataCorruptionTest(forwarder, "fileSet/" + filename)
+        SackComplexErrorTest.SackComplexErrorTest(forwarder, "fileSet/" + filename)
 
 
 """
@@ -126,7 +126,7 @@ class Forwarder(object):
     def execute_tests(self):
         for (t, input_file) in self.tests:
             self.current_test = t
-            # print "Now running '%s'..." % self.current_test.__class__.__name__
+            print "Now running '%s'..." % self.current_test.__class__.__name__
             try:
                 self.start(input_file)
             except (KeyboardInterrupt, SystemExit):
