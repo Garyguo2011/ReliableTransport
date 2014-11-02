@@ -27,7 +27,8 @@ class Sender(BasicSender.BasicSender):
         try:
             super(Sender, self).__init__(dest, port, filename, debug)
         except IOError:
-            print("'" + filename + "' doesn't exist")
+            print("File '" + filename + "' doesn't exist")
+            sys.exit()
         self.packetPool = PacketPool(filename, self)
         self.window = Window()
         self.sendingQueue = SendQueue()
@@ -47,25 +48,17 @@ class Sender(BasicSender.BasicSender):
 
     # Main sending loop.
     def start(self):
-        tmp = 1
         while not self.window.isEmpty():
-            # print(self.window)
-            # print("Round: " + str(tmp))
-            # print("--- Sending out ---")
             while not self.sendingQueue.isEmpty():
                 sendingPacket = self.sendingQueue.deQueue()
                 self.send(sendingPacket)
-                # print(sendingPacket)
-                # print(self.split_packet(sendingPacket)[0:2])
+                print(sendingPacket)
             response = self.receive(TIMEOUT_CONSTANT)
-            # print("---- receive ACK---")
-            # print(response)
-            # print(" ")
+            print(response)
             if response == None:
                 self.handle_timeout()
             else:
                 self.handle_response(response)
-            tmp += 1
 
     def handle_timeout(self):
         # https://piazza.com/class/hz9lw7aquvu2r9?cid=772 after timeout we should reset fast retransmit counter
